@@ -1,6 +1,12 @@
 import jszip from "jszip";
 import useSWR from "swr";
 import fetch from "unfetch";
+import { Container, Typography } from "@material-ui/core";
+
+import { TemporaryExposureKeyExport } from "../lib/protobuf/TemporaryExposureKeyExport";
+import Dashboard from "../components/Dashboard";
+
+const BASE_URL = "https://productie.coronamelder-dist.nl/v1";
 
 interface Manifest {
   exposureKeySets: string[];
@@ -15,48 +21,39 @@ async function fetchAndUnzip<T extends jszip.OutputType>(url: string, fileName: 
   const zip = await jszip.loadAsync(buf);
 
   if (!zip.files[fileName]) {
-    throw new Error(`Manifest ZIP archive is missing "${fileName}" file.`);
+    throw new Error(`ZIP archive is missing "${fileName}" file.`);
   }
 
   return zip.files[fileName].async(outputType);
 }
 
-async function fetchKeySets(manifestURL: string): Promise<ArrayBuffer[]> {
+async function fetchTekExports(manifestURL: string): Promise<TemporaryExposureKeyExport[]> {
   const manifestJSON = await fetchAndUnzip(manifestURL, "content.bin", "string");
   const manifest = JSON.parse(manifestJSON) as Manifest;
 
-  return Promise.all(manifest.exposureKeySets.map(fetchKeySet));
+  return Promise.all(manifest.exposureKeySets.map(fetchTekExport));
 }
 
-async function fetchKeySet(keySetID: string): Promise<ArrayBuffer> {
-  const keySet = await fetchAndUnzip(
-    `https://productie.coronamelder-dist.nl/v1/exposurekeyset/${keySetID}`,
-    "export.bin",
-    "arraybuffer"
-  );
+async function fetchTekExport(keySetID: string): Promise<TemporaryExposureKeyExport> {
+  const buf = await fetchAndUnzip(`${BASE_URL}/exposurekeyset/${keySetID}`, "export.bin", "arraybuffer");
+  const protobuf = buf.slice(16);
 
-  // Return binary data (with header removed).
-  return keySet.slice(17);
+  return TemporaryExposureKeyExport.decode(new Uint8Array(protobuf));
 }
 
 function Index(): JSX.Element {
-  const { data: keySets, error } = useSWR("https://productie.coronamelder-dist.nl/v1/manifest", fetchKeySets);
+  const { data: tekExports, error } = useSWR(`${BASE_URL}/manifest`, fetchTekExports);
 
   if (error) return <div>Error: {error.message}</div>;
-  if (!keySets) return <div>Loading ...</div>;
-
-  const utf8decoder = new TextDecoder();
+  if (!tekExports) return <div>Loading ...</div>;
 
   return (
-    <div>
-      <h1>CoronaMelder: TEK Dashboard</h1>
-      <ul>
-        {keySets.map((keySet, idx) => {
-          const bindump = new Uint8Array(keySet);
-          return <li key={idx}>{utf8decoder.decode(bindump)}</li>;
-        })}
-      </ul>
-    </div>
+    <Container maxWidth="md" style={{ marginTop: "2em" }}>
+      <Typography variant="h4" component="h1" gutterBottom style={{ marginBottom: "1em" }}>
+        🦠 CoronaMelder: TEK Export Dashboard
+      </Typography>
+      <Dashboard tekExports={tekExports.reverse()} />
+    </Container>
   );
 }
 
