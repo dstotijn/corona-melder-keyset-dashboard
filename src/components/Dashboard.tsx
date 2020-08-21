@@ -32,7 +32,15 @@ function parseUnixTimestamp(unixTimestamp: number | Long): string {
     throw new Error("Long value for UNIX timestamp is unsupported.");
   }
   const dt = DateTime.fromSeconds(unixTimestamp as number);
-  return dt.toLocaleString(DateTime.DATETIME_FULL);
+  return dt.toLocaleString({
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "numeric",
+    timeZoneName: "short",
+  });
 }
 
 function Row({ tekExport, batchNum }: { tekExport: TemporaryExposureKeyExport; batchNum: number }) {
@@ -62,8 +70,8 @@ function Row({ tekExport, batchNum }: { tekExport: TemporaryExposureKeyExport; b
                 <TableHead>
                   <TableRow>
                     <TableCell>TEK</TableCell>
-                    <TableCell align="right">Rolling Start Interval Number</TableCell>
-                    <TableCell align="right">Days since symptom onset</TableCell>
+                    <TableCell align="right">Interval start</TableCell>
+                    <TableCell align="right">Transmission risk level</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -72,8 +80,8 @@ function Row({ tekExport, batchNum }: { tekExport: TemporaryExposureKeyExport; b
                       <TableCell component="th" scope="row">
                         <code>{uint8ArrayToHex(tek.keyData, " ")}</code>
                       </TableCell>
-                      <TableCell align="right">{tek.rollingStartIntervalNumber}</TableCell>
-                      <TableCell align="right">{tek.daysSinceOnsetOfSymptoms}</TableCell>
+                      <TableCell align="right">{parseUnixTimestamp(tek.rollingStartIntervalNumber * 600)}</TableCell>
+                      <TableCell align="right">{tek.transmissionRiskLevel}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

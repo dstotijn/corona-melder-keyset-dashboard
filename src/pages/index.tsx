@@ -52,6 +52,10 @@ function Index(): JSX.Element {
       <Typography variant="h4" component="h1" gutterBottom style={{ marginBottom: "1em" }}>
         🦠 CoronaMelder: TEK Export Dashboard
       </Typography>
+      <Typography variant="body1" gutterBottom style={{ marginBottom: "1em" }}>
+        🚧 Work in progress.{" "}
+        <a href="https://github.com/dstotijn/corona-melder-keyset-dashboard">View source on GitHub.</a>
+      </Typography>
       <Dashboard tekExports={tekExports.reverse()} />
     </Container>
   );
