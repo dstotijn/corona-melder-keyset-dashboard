@@ -15,9 +15,7 @@ interface Manifest {
 }
 
 async function fetchAndUnzip<T extends jszip.OutputType>(url: string, fileName: string, outputType: T) {
-  const resp = await fetch(url, {
-    mode: "no-cors",
-  });
+  const resp = await fetch(url);
   const buf = await resp.arrayBuffer();
 
   const zip = await jszip.loadAsync(buf);
