@@ -6,7 +6,7 @@ import { Container, Typography } from "@material-ui/core";
 import { TemporaryExposureKeyExport } from "../lib/protobuf/TemporaryExposureKeyExport";
 import Dashboard from "../components/Dashboard";
 
-const BASE_URL = "https://productie.coronamelder-dist.nl/v1";
+const BASE_URL = "https://naked.coronamelder-backend.nl/v1";
 
 interface Manifest {
   exposureKeySets: string[];
@@ -15,7 +15,9 @@ interface Manifest {
 }
 
 async function fetchAndUnzip<T extends jszip.OutputType>(url: string, fileName: string, outputType: T) {
-  const resp = await fetch(url);
+  const resp = await fetch(url, {
+    mode: "no-cors",
+  });
   const buf = await resp.arrayBuffer();
 
   const zip = await jszip.loadAsync(buf);
